@@ -17,7 +17,7 @@ int curl_me(int client_socket)
 {
   CURL *curl;
   CURLcode res;
-  char response_str[8192];
+  char response_str[4096];
 
   curl_global_init(CURL_GLOBAL_DEFAULT);
 
