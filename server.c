@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <errno.h>
 #include <stdlib.h>
-//#include <cstring>
+#include <string.h>
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -13,13 +13,17 @@
 
 #include <curl/curl.h>
 
-size_t write_callback(char *ptr, size_t size, size_t nmemb, char *userdata){
-  printf("what curl received follows: %s\n", ptr);
-  strcat(userdata, ptr);
-  return 0;
+size_t append_html(char *ptr, size_t size, size_t nmemb, void *userdata){
+//  userdata = malloc(16 + 19 + 25 + size*nmemb + 7 + 1);
+  strcpy(userdata, "HTTP/1.1 200 OK\n");  //16
+  strcat(userdata, "Content-length: 5000\n");   //19
+  strcat(userdata, "Content-Type: text/html\n\n");  //25
+  strncat(userdata, ptr, nmemb);
+  strcat(userdata, "\0");
+  return size*nmemb;
 }
 
-int curl_me(int client_socket)
+int serve_request(int client_socket)
 {
   CURL *curl;
   CURLcode res;
@@ -29,15 +33,12 @@ int curl_me(int client_socket)
 
   curl = curl_easy_init();
 
-  strcpy(response_str, "HTTP/1.1 200 OK\n");  //16
-  strcat(response_str, "Content-length: 4096\n");   //19
-  strcat(response_str, "Content-Type: text/html\n\n");  //25
 
   printf("init ok\n");
   if(curl) {
     curl_easy_setopt(curl, CURLOPT_URL, "http://83.212.116.210/");
-    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback);
-    curl_easy_setopt(curl, CURLOPT_WRITEDATA, response_str);
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, append_html);
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void*)response_str);
     printf("ok before curl perform\n");
     res = curl_easy_perform(curl);
     printf("ok after curl perform\n");
@@ -45,7 +46,8 @@ int curl_me(int client_socket)
       fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
     }
     else {
-      write(client_socket, "Thanks\n", 7);
+      printf("SIZEOF response_str:%d\n", response_str);
+      write(client_socket, response_str, strlen(response_str));
 //      write(client_socket, response_str, sizeof(response_str));
     }
     curl_easy_cleanup(curl);
@@ -106,16 +108,13 @@ int main (void){
                   }
                 FD_SET (new_conn, &active_fd_set);
               }
-            else
-              {
+            else {
                 /* Data arriving on an already-connected socket. */
                 printf("Data arriving on an already-connected socket. Trying to read from client\n");
-                if (read_from_client (i) < 0)
-                  {
-                    close (i);
-                    FD_CLR (i, &active_fd_set);
-                  }
-              }
+                read_request(i);
+                close (i);
+                FD_CLR (i, &active_fd_set);
+            }
           }
        }
     }
@@ -145,7 +144,7 @@ int initialize_socket (uint16_t port){
   return sock;
 }
 
-int read_from_client (int filedes){
+int read_request(int filedes){
   char buffer[MAXMSG];
   int nbytes;
 
@@ -165,8 +164,10 @@ int read_from_client (int filedes){
       int len = strlen(buffer);
       buffer[len-1] = 0;
       fprintf (stderr, "Server: got message: `%s'\n", buffer);
-      curl_me(filedes);
+      if(strncmp(buffer, "GET / HTTP/1.1", 14) == 0){
+        serve_request(filedes);
 //      write (filedes, "Thanks\n", 7);
+      }
       return 0;
     }
 }
