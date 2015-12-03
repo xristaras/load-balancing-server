@@ -13,6 +13,12 @@
 
 #include <curl/curl.h>
 
+size_t write_callback(char *ptr, size_t size, size_t nmemb, char *userdata){
+  printf("what curl received follows: %s\n", ptr);
+  strcat(userdata, ptr);
+  return 0;
+}
+
 int curl_me(int client_socket)
 {
   CURL *curl;
@@ -24,14 +30,14 @@ int curl_me(int client_socket)
   curl = curl_easy_init();
 
   strcpy(response_str, "HTTP/1.1 200 OK\n");  //16
-  strcat(response_str, "Content-length: 46\n");   //19
+  strcat(response_str, "Content-length: 4096\n");   //19
   strcat(response_str, "Content-Type: text/html\n\n");  //25
 
-  printf("init ok\n"); 
+  printf("init ok\n");
   if(curl) {
-    curl_easy_setopt(curl, CURLOPT_URL, "http://localhost/");
-//    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, strcat);
-    curl_easy_setopt(curl, CURLOPT_WRITEDATA, client_socket); //response_str);
+    curl_easy_setopt(curl, CURLOPT_URL, "http://83.212.116.210/");
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback);
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, response_str);
     printf("ok before curl perform\n");
     res = curl_easy_perform(curl);
     printf("ok after curl perform\n");
