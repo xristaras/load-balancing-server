@@ -9,34 +9,39 @@
 #include <netdb.h>
 
 #define PORT    5555
-#define MAXMSG  512
+#define MAXMSG  1024
 
 #include <curl/curl.h>
 
-size_t append_html(char *ptr, size_t size, size_t nmemb, void *userdata){
+size_t append_headers(char* ptr, size_t size, size_t nitems, void* userdata){
+  strncat(userdata, ptr, size*nitems);
+//  printf("\n\n\nPRINTED AFTER HEADER COPY\n\n\n%s\n\n\n", userdata);
+  return size*nitems;
+}
+
+size_t append_html(char* ptr, size_t size, size_t nmemb, void* userdata){
 //  userdata = malloc(16 + 19 + 25 + size*nmemb + 7 + 1);
-  strcpy(userdata, "HTTP/1.1 200 OK\n");  //16
-  strcat(userdata, "Content-length: 5000\n");   //19
-  strcat(userdata, "Content-Type: text/html\n\n");  //25
+//  strcpy(userdata, "HTTP/1.1 200 OK\n");  //16
+//  strcat(userdata, "Content-length: 5000\n");   //19
+//  strcat(userdata, "Content-Type: text/html\n\n");  //25
   strncat(userdata, ptr, nmemb);
-  strcat(userdata, "\0");
+//  printf("\n\n\nPRINTED AFTER HTML COPY\n\n\n\n%s\n\n\n", userdata);
+//  printf("IN APPEND_HTML SIZEOF userdata: %d, STRLEN: %d\n\n", sizeof(userdata), strlen(userdata));
   return size*nmemb;
 }
 
-int serve_request(int client_socket)
-{
+int serve_request(int client_socket){
+
   CURL *curl;
   CURLcode res;
-  char response_str[4096];
-
+  char response_str[5000];
   curl_global_init(CURL_GLOBAL_DEFAULT);
-
   curl = curl_easy_init();
 
-
-  printf("init ok\n");
   if(curl) {
     curl_easy_setopt(curl, CURLOPT_URL, "http://83.212.116.210/");
+    curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, append_headers);
+    curl_easy_setopt(curl, CURLOPT_HEADERDATA, (void*)response_str);
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, append_html);
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void*)response_str);
     printf("ok before curl perform\n");
@@ -46,15 +51,15 @@ int serve_request(int client_socket)
       fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
     }
     else {
-      printf("SIZEOF response_str:%d\n", response_str);
+      strcat(response_str, "\0");
+      printf("SIZEOF response_str:%d\n", strlen(response_str));
       write(client_socket, response_str, strlen(response_str));
-//      write(client_socket, response_str, sizeof(response_str));
     }
     curl_easy_cleanup(curl);
   }
 
   curl_global_cleanup();
-
+  strcpy(response_str, "\0");
   return 0;
 
 }
@@ -99,7 +104,7 @@ int main (void){
                 int new_conn;
                 size = sizeof (clientname);
                 new_conn = accept (sock, (struct sockaddr *)&clientname, (socklen_t * __restrict__)&size);
-                printf("new connection request, just accepted\n");
+                printf("FD_SETSIZE is %d, new connection request, just accepted in %d\n", FD_SETSIZE, i);
                 if (new_conn < 0)
                   {
                     printf("accept failure\n");
@@ -110,8 +115,8 @@ int main (void){
               }
             else {
                 /* Data arriving on an already-connected socket. */
-                printf("Data arriving on an already-connected socket. Trying to read from client\n");
-                read_request(i);
+                printf("WILL HANDLE %d\n", i);
+                handle_request(i);
                 close (i);
                 FD_CLR (i, &active_fd_set);
             }
@@ -144,7 +149,7 @@ int initialize_socket (uint16_t port){
   return sock;
 }
 
-int read_request(int filedes){
+int handle_request(int filedes){
   char buffer[MAXMSG];
   int nbytes;
 
@@ -163,10 +168,10 @@ int read_request(int filedes){
       /* Data read. */
       int len = strlen(buffer);
       buffer[len-1] = 0;
-      fprintf (stderr, "Server: got message: `%s'\n", buffer);
+      fprintf (stderr, "Server: got message of len %d:\n '%s'\n\n", strlen(buffer), buffer);
       if(strncmp(buffer, "GET / HTTP/1.1", 14) == 0){
         serve_request(filedes);
-//      write (filedes, "Thanks\n", 7);
+        printf("RQUEST SERVED MUST NOT WAIT ANYMORE\n");
       }
       return 0;
     }
