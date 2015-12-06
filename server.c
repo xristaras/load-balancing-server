@@ -44,6 +44,7 @@ int serve_request(int client_socket){
     curl_easy_setopt(curl, CURLOPT_HEADERDATA, (void*)response_str);
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, append_html);
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void*)response_str);
+    curl_easy_setopt(curl, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_0 );  //because of a (encoding?) bug in latest version
     printf("ok before curl perform\n");
     res = curl_easy_perform(curl);
     printf("ok after curl perform\n");
@@ -52,7 +53,7 @@ int serve_request(int client_socket){
     }
     else {
       strcat(response_str, "\0");
-      printf("SIZEOF response_str:%d\n", strlen(response_str));
+//      printf("SIZEOF response_str:%d\n\n\n\n\nRESPONSE_STR:%s\n\n\n\n\n", strlen(response_str), response_str);
       write(client_socket, response_str, strlen(response_str));
     }
     curl_easy_cleanup(curl);
@@ -168,11 +169,11 @@ int handle_request(int filedes){
       /* Data read. */
       int len = strlen(buffer);
       buffer[len-1] = 0;
-      fprintf (stderr, "Server: got message of len %d:\n '%s'\n\n", strlen(buffer), buffer);
-      if(strncmp(buffer, "GET / HTTP/1.1", 14) == 0){
+      printf("\n\nServer: got message of len %d:\n '%s'\n\n\n", strlen(buffer), buffer);
+//      if(strncmp(buffer, "GET / HTTP/1.1", 14) == 0){
         serve_request(filedes);
         printf("RQUEST SERVED MUST NOT WAIT ANYMORE\n");
-      }
+//      }
       return 0;
     }
 }
