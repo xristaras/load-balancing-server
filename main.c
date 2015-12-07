@@ -1,6 +1,6 @@
-#include "hhtp_server.h"
+#include "http_server.h"
 
-int main(void){
+int main(int argc, char **argv){
    extern int initialize_socket(uint16_t port);
    int sock;
    fd_set active_fd_set, read_fd_set;

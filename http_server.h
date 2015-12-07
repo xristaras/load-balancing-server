@@ -12,6 +12,10 @@
 #define PORT    5555
 #define MAXMSG  1024
 
+typedef struct {
+   char ipaddress[16];
+} AppServer;
+
 size_t append_headers(char* ptr, size_t size, size_t nitems, void* userdata);
 size_t append_html(char* ptr, size_t size, size_t nmemb, void* userdata);
 int serve_request(int client_socket);
