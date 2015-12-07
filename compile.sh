@@ -1,3 +1,3 @@
 #!/bin/bash
 
-gcc main.c server.c -lcurl -ggdb
+gcc main.c server.c load_balancers.c -lcurl -ggdb

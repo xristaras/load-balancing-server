@@ -24,17 +24,19 @@ int serve_request(int client_socket){
    char response_str[5000];
    curl_global_init(CURL_GLOBAL_DEFAULT);
    curl = curl_easy_init();
+ 
+   char selected_ip[16];
+   strcpy(selected_ip, choose_and_fetch_ip());
+   printf("Request being served by %s\n", selected_ip);
 
    if (curl) {
-      curl_easy_setopt(curl, CURLOPT_URL, "http://83.212.116.210/");
+      curl_easy_setopt(curl, CURLOPT_URL, selected_ip);
       curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, append_headers);
       curl_easy_setopt(curl, CURLOPT_HEADERDATA, (void*)response_str);
       curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, append_html);
       curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void*)response_str);
       curl_easy_setopt(curl, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_0 );  //because of a (encoding?) bug in latest version
-      printf("ok before curl perform\n");
       res = curl_easy_perform(curl);
-      printf("ok after curl perform\n");
       if (res != CURLE_OK) {
          fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
       }
@@ -93,7 +95,65 @@ int handle_request(int filedes){
       buffer[len-1] = 0;
 //      printf("\n\nServer: got message of len %d:\n '%s'\n\n\n", strlen(buffer), buffer);
       serve_request(filedes);
-      printf("RQUEST SERVED MUST NOT WAIT ANYMORE\n");
+//      printf("RQUEST SERVED MUST NOT WAIT ANYMORE\n");
       return 0;
    }
+}
+
+void operate_server(char* selected_algorithm){
+   extern int initialize_socket(uint16_t port);
+   int sock;
+   fd_set active_fd_set, read_fd_set;
+   int i;
+   struct sockaddr_in clientname;
+   size_t size;
+
+   /* Create the socket and set it up to accept connections. */
+   sock = initialize_socket(PORT);
+   if (listen(sock, 1) < 0) {
+       perror("listen");
+       exit(EXIT_FAILURE);
+   }
+
+   /* Initialize the set of active sockets. */
+   FD_ZERO(&active_fd_set);
+   FD_SET(sock, &active_fd_set);
+
+   printf("Started HTTP Server using %s\n", selected_algorithm);
+
+   while(1){
+      /* Block until input arrives on one or more active sockets. */
+      read_fd_set = active_fd_set;
+      if (select(FD_SETSIZE, &read_fd_set, NULL, NULL, NULL) < 0) {
+         perror("select");
+         exit(EXIT_FAILURE);
+      }
+
+      /* Service all the sockets with input pending. */
+      for (i = 0; i < FD_SETSIZE; ++i) {
+         if (FD_ISSET (i, &read_fd_set)) {
+            if (i == sock) {
+               /* Connection request on original socket. */
+               int new_conn;
+               size = sizeof (clientname);
+               new_conn = accept (sock, (struct sockaddr *)&clientname, (socklen_t * __restrict__)&size);
+               printf("New connection request, socket %d will handle it\n", i);
+               if (new_conn < 0) {
+                  printf("accept failure\n");
+                  perror("accept");
+                  exit(EXIT_FAILURE);
+               }
+               FD_SET(new_conn, &active_fd_set);
+            }
+            else {
+               /* Data arriving on an already-connected socket. */
+               handle_request(i);
+               close(i);
+               FD_CLR(i, &active_fd_set);
+               printf("Request served by %d, connection closing\n", i);
+            }
+         }
+      }
+   }
+
 }
