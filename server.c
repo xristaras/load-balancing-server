@@ -17,7 +17,7 @@ size_t append_html(char* ptr, size_t size, size_t nmemb, void* userdata){
    return size*nmemb;
 }
 
-int serve_request(int client_socket){
+int serve_request(int client_socket, char* method){
 
    CURL *curl;
    CURLcode res;
@@ -26,7 +26,7 @@ int serve_request(int client_socket){
    curl = curl_easy_init();
  
    char selected_ip[16];
-   strcpy(selected_ip, choose_and_fetch_ip());
+   strcpy(selected_ip, choose_and_fetch_ip(method));
    printf("Request being served by %s\n", selected_ip);
 
    if (curl) {
@@ -76,7 +76,7 @@ int initialize_socket(uint16_t port){
    return sock;
 }
 
-int handle_request(int filedes){
+int handle_request(int filedes, char* selected_algorithm){
    char buffer[MAXMSG];
    int nbytes;
    nbytes = read(filedes, buffer, MAXMSG);
@@ -94,7 +94,7 @@ int handle_request(int filedes){
       int len = strlen(buffer);
       buffer[len-1] = 0;
 //      printf("\n\nServer: got message of len %d:\n '%s'\n\n\n", strlen(buffer), buffer);
-      serve_request(filedes);
+      serve_request(filedes, selected_algorithm);
 //      printf("RQUEST SERVED MUST NOT WAIT ANYMORE\n");
       return 0;
    }
@@ -147,7 +147,7 @@ void operate_server(char* selected_algorithm){
             }
             else {
                /* Data arriving on an already-connected socket. */
-               handle_request(i);
+               handle_request(i, selected_algorithm);
                close(i);
                FD_CLR(i, &active_fd_set);
                printf("Request served by %d, connection closing\n", i);

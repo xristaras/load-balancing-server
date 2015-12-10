@@ -3,8 +3,9 @@
 int main(int argc, char* argv[]){
 
    char selected_algorithm[15];
-   init_server_container(servers_container);
-   
+   init_server_container(&servers_container);
+
+   printf("first_ip: %s\n", servers_container->servers[0].ipaddress);
    if (argc == 1){  //no method given
       strcpy(selected_algorithm, "round_robin");
    }
@@ -14,6 +15,6 @@ int main(int argc, char* argv[]){
 
    operate_server(selected_algorithm);
 
-   destroy_server_container(servers_container);
+   destroy_server_container(&servers_container);
 }
 
