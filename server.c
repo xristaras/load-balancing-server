@@ -22,7 +22,7 @@ int serve_request(int client_socket, char* method){
    CURL *curl;
    CURLcode res;
    char response_str[5000];
-   curl_global_init(CURL_GLOBAL_DEFAULT);
+//   curl_global_init(CURL_GLOBAL_DEFAULT);
    curl = curl_easy_init();
  
    char selected_ip[16];
@@ -48,7 +48,7 @@ int serve_request(int client_socket, char* method){
       curl_easy_cleanup(curl);
    }
 
-   curl_global_cleanup();
+//   curl_global_cleanup();
    strcpy(response_str, "\0");
    return 0;
 

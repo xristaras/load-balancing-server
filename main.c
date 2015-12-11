@@ -13,8 +13,10 @@ int main(int argc, char* argv[]){
       strcpy(selected_algorithm, argv[1]);
    }
 
+   curl_global_init(CURL_GLOBAL_DEFAULT);
    operate_server(selected_algorithm);
 
+   curl_global_cleanup();
    destroy_server_container(&servers_container);
 }
 
