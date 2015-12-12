@@ -27,11 +27,12 @@ int init_server_struct(AppServer* server, char* ip){
 
 char* choose_and_fetch_ip(char* method){
    if (strcmp(method, "round_robin")==0){
+      pthread_mutex_lock(&lb_state_mutex);
       servers_container->last_served_index++;
       if (servers_container->last_served_index == 4) {
          servers_container->last_served_index=0;
       }
+      pthread_mutex_unlock(&lb_state_mutex);
       return servers_container->servers[servers_container->last_served_index].ipaddress;
    }
-//   return "83.212.116.210";
 }

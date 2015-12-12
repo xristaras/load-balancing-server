@@ -8,8 +8,9 @@
 #include <netinet/in.h>
 #include <netdb.h>
 #include <curl/curl.h>
+#include <pthread.h>
 
-#define PORT    5555
+#define PORT    80
 #define MAXMSG  1024
 
 #define S2ELAB_IP         "83.212.112.122"
@@ -26,7 +27,13 @@ typedef struct {
    int last_served_index;
 } AppServerContainer;
 
+typedef struct {
+  int filedes;
+  char selected_algorithm[16];
+} RequestHandlerArgs;
+
 AppServerContainer* servers_container;
+pthread_mutex_t lb_state_mutex;
 
 // server.c
 void operate_server(char* selected_algorithm);
@@ -34,7 +41,7 @@ size_t append_headers(char* ptr, size_t size, size_t nitems, void* userdata);
 size_t append_html(char* ptr, size_t size, size_t nmemb, void* userdata);
 int serve_request(int client_socket, char* selected_algorithm);
 int initialize_socket(uint16_t port);
-int handle_request(int filedes, char* selected_algorithm);
+int handle_request(RequestHandlerArgs* args);
 
 // load_balancers.c
 int init_server_container(AppServerContainer** container_ptr);
