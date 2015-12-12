@@ -12,15 +12,15 @@ size_t append_html(char* ptr, size_t size, size_t nmemb, void* userdata){
    return size*nmemb;
 }
 
-int serve_request(int client_socket, char* method){
+int serve_request(int client_socket, char* lb_method){
    CURL *curl;
    CURLcode res;
    char response_str[5000];
    curl = curl_easy_init();
  
    char selected_ip[16];
-   strcpy(selected_ip, choose_and_fetch_ip(method));
-   printf("Request being served by %s\n", selected_ip);
+   strcpy(selected_ip, choose_and_fetch_ip(lb_method));
+   printf("Request being served by %s, currently serving %d clients\n", selected_ip, num_clients_connected);
 
    if (curl) {
       curl_easy_setopt(curl, CURLOPT_URL, selected_ip);
@@ -70,6 +70,7 @@ int initialize_socket(uint16_t port){
 int handle_request(RequestHandlerArgs *args){
    char buffer[MAXMSG];
    int nbytes;
+   increment_clients_counter();
    nbytes = read(args->filedes, buffer, MAXMSG);
    if (nbytes < 0) {
       /* Read error. */
@@ -84,20 +85,23 @@ int handle_request(RequestHandlerArgs *args){
       /* Data read. */
       int len = strlen(buffer);
       buffer[len-1] = 0;
-      serve_request(args->filedes, args->selected_algorithm);
+      serve_request(args->filedes, args->lb_method);
       close(args->filedes);
-      printf("Just closed %d\n", args->filedes);
+//      printf("Just closed %d\n", args->filedes);
       free(args);
+      decrement_clients_counter();
       return 0;
    }
 }
 
-void operate_server(char* selected_algorithm){
+void operate_server(char* lb_method){
    extern int initialize_socket(uint16_t port);
    int i, sock, client_sock;
    struct sockaddr_in clientname;
    size_t size;
    now_being_served=0;
+
+   printf("Server operation initiated, using %s algorithm\n", pretty_print_method(lb_method));
 
    /* Create the socket and set it up to accept connections. */
    sock = initialize_socket(PORT);
@@ -106,15 +110,14 @@ void operate_server(char* selected_algorithm){
        exit(EXIT_FAILURE);
    }
 
-   printf("Started HTTP Server using %s\n", selected_algorithm);
    size = sizeof(clientname);
    pthread_t thread_id;
    while ((client_sock = accept(sock, (struct sockaddr *)&clientname, (socklen_t* __restrict__)&size))){
-      printf("New connection request, socket %d will handle it\n", client_sock);
+//      printf("New connection request, socket %d will handle it\n", client_sock);
       RequestHandlerArgs *thread_args;
       thread_args=(RequestHandlerArgs*)malloc(sizeof(RequestHandlerArgs));
       thread_args->filedes=client_sock;
-      strcpy(thread_args->selected_algorithm, selected_algorithm);
+      strcpy(thread_args->lb_method, lb_method);
       if (pthread_create(&thread_id, NULL, handle_request, (void*)thread_args) < 0){
           perror("pthread_create");
           exit(EXIT_FAILURE);
@@ -122,4 +125,16 @@ void operate_server(char* selected_algorithm){
       pthread_detach(thread_id);
    }
 
+}
+
+void increment_clients_counter(){
+   pthread_mutex_lock(&clients_counter_mutex);
+   num_clients_connected++;
+   pthread_mutex_unlock(&clients_counter_mutex);
+}
+
+void decrement_clients_counter(){
+   pthread_mutex_lock(&clients_counter_mutex);
+   num_clients_connected--;
+   pthread_mutex_unlock(&clients_counter_mutex);
 }

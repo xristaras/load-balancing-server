@@ -1,8 +1,13 @@
 #include "http_server.h"
 
 char* round_robin(){
-   //lock last_served_index
-   return servers_container->servers[(servers_container->last_served_index++)%4].ipaddress;
+   pthread_mutex_lock(&lb_state_mutex);
+   servers_container->last_served_index++;
+   if (servers_container->last_served_index == 4) {
+      servers_container->last_served_index=0;
+   }
+   pthread_mutex_unlock(&lb_state_mutex);
+   return servers_container->servers[servers_container->last_served_index].ipaddress;
 }
 
 int init_server_container(AppServerContainer** container_ptr){
@@ -25,14 +30,14 @@ int init_server_struct(AppServer* server, char* ip){
    return 0;
 }
 
-char* choose_and_fetch_ip(char* method){
-   if (strcmp(method, "round_robin")==0){
-      pthread_mutex_lock(&lb_state_mutex);
-      servers_container->last_served_index++;
-      if (servers_container->last_served_index == 4) {
-         servers_container->last_served_index=0;
-      }
-      pthread_mutex_unlock(&lb_state_mutex);
-      return servers_container->servers[servers_container->last_served_index].ipaddress;
+char* choose_and_fetch_ip(char* lb_method){
+   if (strcmp(lb_method, ROUND_ROBIN_ID)==0){
+      return round_robin();
+   }
+}
+
+char* pretty_print_method(char* lb_method_identifier){
+   if (strcmp(lb_method_identifier, ROUND_ROBIN_ID)==0){
+      return "round robin";
    }
 }
