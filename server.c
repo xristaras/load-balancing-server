@@ -1,7 +1,5 @@
 #include "http_server.h"
 
-int now_being_served;
-
 size_t append_headers(char* ptr, size_t size, size_t nitems, void* userdata){
    strncat(userdata, ptr, size*nitems);
    return size*nitems;
@@ -19,7 +17,7 @@ int serve_request(int client_socket, char* lb_method){
    curl = curl_easy_init();
  
    char selected_ip[16];
-   strcpy(selected_ip, choose_and_fetch_ip(lb_method));
+   strcpy(selected_ip, choose_and_fetch_ip());
    printf("Request being served by %s, currently serving %d clients\n", selected_ip, num_clients_connected);
 
    if (curl) {
@@ -85,11 +83,15 @@ int handle_request(RequestHandlerArgs *args){
       /* Data read. */
       int len = strlen(buffer);
       buffer[len-1] = 0;
-      serve_request(args->filedes, args->lb_method);
+      int served_by_idx=serve_request(args->filedes, args->lb_method);
       close(args->filedes);
-//      printf("Just closed %d\n", args->filedes);
       free(args);
       decrement_clients_counter();
+      #ifdef LEAST_CONN
+      pthread_mutex_unlock(&lb_state_mutex);
+      servers_container->now_serving[served_by_idx]--;
+      pthread_mutex_unlock(&lb_state_mutex);
+      #endif
       return 0;
    }
 }
@@ -99,7 +101,6 @@ void operate_server(char* lb_method){
    int i, sock, client_sock;
    struct sockaddr_in clientname;
    size_t size;
-   now_being_served=0;
 
    printf("Server operation initiated, using %s algorithm\n", pretty_print_method(lb_method));
 
@@ -118,7 +119,7 @@ void operate_server(char* lb_method){
       thread_args=(RequestHandlerArgs*)malloc(sizeof(RequestHandlerArgs));
       thread_args->filedes=client_sock;
       strcpy(thread_args->lb_method, lb_method);
-      if (pthread_create(&thread_id, NULL, handle_request, (void*)thread_args) < 0){
+      if (pthread_create(&thread_id, NULL, (void *)handle_request, (void*)thread_args) < 0){
           perror("pthread_create");
           exit(EXIT_FAILURE);
       }

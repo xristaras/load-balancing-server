@@ -5,12 +5,12 @@ int main(int argc, char* argv[]){
    char lb_method[4];
    init_server_container(&servers_container);
 
-   if (argc == 1){  //no method given
-      strcpy(lb_method, ROUND_ROBIN_ID);
-   }
-   else {
-      strcpy(lb_method, argv[1]);
-   }
+   #ifdef ROUND_ROBIN
+   strcpy(lb_method, ROUND_ROBIN_ID);
+   #endif
+   #ifdef LEAST_CONN
+   strcpy(lb_method, LEAST_CONN_ID);
+   #endif
 
    pthread_mutex_init(&lb_state_mutex, NULL);
    pthread_mutex_init(&clients_counter_mutex, NULL);

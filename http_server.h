@@ -10,6 +10,12 @@
 #include <curl/curl.h>
 #include <pthread.h>
 
+//#define ROUND_ROBIN
+#define LEAST_CONN
+
+#define ROUND_ROBIN_ID    "rr"
+#define LEAST_CONN_ID     "lc"
+
 #define PORT    80
 #define MAXMSG  1024
 
@@ -18,8 +24,7 @@
 #define S2ELABTEACHER_IP  "83.212.87.48"
 #define S2ELABTUTOR_IP    "83.212.112.124"
 
-#define ROUND_ROBIN_ID    "rr"
-
+#ifdef ROUND_ROBIN
 typedef struct {
    char ipaddress[16];
 } AppServer;
@@ -28,6 +33,18 @@ typedef struct {
    AppServer servers[4];
    int last_served_index;
 } AppServerContainer;
+#endif
+
+#ifdef LEAST_CONN
+typedef struct {
+   char ipaddress[16];
+} AppServer;
+
+typedef struct {
+   AppServer servers[4];
+   int now_serving[4];  //num of active connections for each server
+} AppServerContainer;
+#endif
 
 typedef struct {
   int filedes;
@@ -53,5 +70,5 @@ char* round_robin();
 int init_server_container(AppServerContainer** container_ptr);
 int destroy_server_container(AppServerContainer** container_ptr);
 int init_server_struct(AppServer* server, char* ip);
-char* choose_and_fetch_ip(char* lb_method);
+char* choose_and_fetch_ip();
 char* pretty_print_method(char* lb_method_identifier);
