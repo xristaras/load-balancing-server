@@ -13,11 +13,12 @@ size_t append_html(char* ptr, size_t size, size_t nmemb, void* userdata){
 int serve_request(int client_socket, char* lb_method){
    CURL *curl;
    CURLcode res;
+   int served_by_idx;
    char response_str[5000];
    curl = curl_easy_init();
- 
+
    char selected_ip[16];
-   strcpy(selected_ip, choose_and_fetch_ip());
+   strcpy(selected_ip, choose_and_fetch_ip(&served_by_idx));
    printf("Request being served by %s, currently serving %d clients\n", selected_ip, num_clients_connected);
 
    if (curl) {
@@ -39,7 +40,7 @@ int serve_request(int client_socket, char* lb_method){
    }
 
    strcpy(response_str, "\0");
-   return 0;
+   return served_by_idx;
 
 }
 

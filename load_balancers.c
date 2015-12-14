@@ -22,7 +22,7 @@ int init_server_container(AppServerContainer** container_ptr){
 #endif
 
 #ifdef LEAST_CONN
-char* least_conn(){
+char* least_conn(int* served_by_idx){
    pthread_mutex_lock(&lb_state_mutex);
    int i, least_conn_index=0;
    int least_conn_value=servers_container->now_serving[0];
@@ -34,6 +34,7 @@ char* least_conn(){
    }
    printf("NOW SERVING DISTRIBUTION: %d %d %d %d\n", servers_container->now_serving[0], servers_container->now_serving[1], servers_container->now_serving[2], servers_container->now_serving[3]);
    servers_container->now_serving[least_conn_index]++;
+   *served_by_idx=least_conn_index;
    pthread_mutex_unlock(&lb_state_mutex);
    return servers_container->servers[least_conn_index].ipaddress;
 }
@@ -62,12 +63,12 @@ int init_server_struct(AppServer* server, char* ip){
    return 0;
 }
 
-char* choose_and_fetch_ip(){
+char* choose_and_fetch_ip(int* served_by_idx){
    #ifdef ROUND_ROBIN
    return round_robin();
    #endif
    #ifdef LEAST_CONN
-   return least_conn();
+   return least_conn(served_by_idx);
    #endif
 }
 

@@ -10,8 +10,8 @@
 #include <curl/curl.h>
 #include <pthread.h>
 
-//#define ROUND_ROBIN
-#define LEAST_CONN
+#define ROUND_ROBIN
+//#define LEAST_CONN
 
 #define ROUND_ROBIN_ID    "rr"
 #define LEAST_CONN_ID     "lc"
@@ -70,5 +70,5 @@ char* round_robin();
 int init_server_container(AppServerContainer** container_ptr);
 int destroy_server_container(AppServerContainer** container_ptr);
 int init_server_struct(AppServer* server, char* ip);
-char* choose_and_fetch_ip();
+char* choose_and_fetch_ip(int* served_by_idx);
 char* pretty_print_method(char* lb_method_identifier);
