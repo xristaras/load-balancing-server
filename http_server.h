@@ -10,8 +10,9 @@
 #include <curl/curl.h>
 #include <pthread.h>
 
-#define ROUND_ROBIN
-//#define LEAST_CONN
+//#define ROUND_ROBIN
+#define LEAST_CONN
+//#define LEAST_LATENCY
 
 #define ROUND_ROBIN_ID    "rr"
 #define LEAST_CONN_ID     "lc"
@@ -44,6 +45,18 @@ typedef struct {
    AppServer servers[4];
    int now_serving[4];  //num of active connections for each server
 } AppServerContainer;
+#endif
+
+#ifdef LEAST_LATENCY
+typedef struct {
+   char ipaddress[16];
+} AppServer;
+
+typedef struct {
+   AppServer servers[4];
+   int weight[4];
+} AppServerContainer;
+
 #endif
 
 typedef struct {

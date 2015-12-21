@@ -1,6 +1,9 @@
 #include "http_server.h"
 
 size_t append_headers(char* ptr, size_t size, size_t nitems, void* userdata){
+   if (strstr(ptr, "503") != NULL){
+      printf("503 found!\n");
+   }
    strncat(userdata, ptr, size*nitems);
    return size*nitems;
 }
