@@ -56,7 +56,6 @@ typedef struct {
    AppServer servers[4];
    int weight[4];
 } AppServerContainer;
-
 #endif
 
 typedef struct {
@@ -80,6 +79,8 @@ void decrement_clients_counter();
 
 // load_balancers.c
 char* round_robin();
+char* least_conn(int* served_by_idx);
+char* least_latency();
 int init_server_container(AppServerContainer** container_ptr);
 int destroy_server_container(AppServerContainer** container_ptr);
 int init_server_struct(AppServer* server, char* ip);
