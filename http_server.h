@@ -11,14 +11,16 @@
 #include <pthread.h>
 
 //#define ROUND_ROBIN
-#define LEAST_CONN
-//#define LEAST_LATENCY
+//#define LEAST_CONN
+#define LEAST_LATENCY
 
 #define ROUND_ROBIN_ID    "rr"
 #define LEAST_CONN_ID     "lc"
+#define LEAST_LATENCY_ID  "ll"
 
-#define PORT    80
-#define MAXMSG  1024
+#define PORT          80
+#define MAXMSG        1024
+#define SEC_INTERVAL  2
 
 #define S2ELAB_IP         "83.212.112.122"
 #define S2ELABSTUDENT_IP  "83.212.85.236"
@@ -55,6 +57,8 @@ typedef struct {
 typedef struct {
    AppServer servers[4];
    int weight[4];
+   int now_serving[4];
+   int normalized_weight[4];
 } AppServerContainer;
 #endif
 
@@ -80,9 +84,10 @@ void decrement_clients_counter();
 // load_balancers.c
 char* round_robin();
 char* least_conn(int* served_by_idx);
-char* least_latency();
+char* least_latency(int* served_by_idx);
 int init_server_container(AppServerContainer** container_ptr);
 int destroy_server_container(AppServerContainer** container_ptr);
 int init_server_struct(AppServer* server, char* ip);
 char* choose_and_fetch_ip(int* served_by_idx);
+void weight_calculator();
 char* pretty_print_method(char* lb_method_identifier);

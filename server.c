@@ -91,7 +91,7 @@ int handle_request(RequestHandlerArgs *args){
       close(args->filedes);
       free(args);
       decrement_clients_counter();
-      #ifdef LEAST_CONN
+      #if defined(LEAST_CONN) || defined(LEAST_LATENCY)
       pthread_mutex_unlock(&lb_state_mutex);
       servers_container->now_serving[served_by_idx]--;
       pthread_mutex_unlock(&lb_state_mutex);
@@ -117,6 +117,13 @@ void operate_server(char* lb_method){
 
    size = sizeof(clientname);
    pthread_t thread_id;
+   #ifdef LEAST_LATENCY
+   if (pthread_create(&thread_id, NULL, (void *)weight_calculator, (void*)NULL) < 0){
+      perror("calculator pthread_create");
+      exit(EXIT_FAILURE);
+   }
+   pthread_detach(thread_id);
+   #endif
    while ((client_sock = accept(sock, (struct sockaddr *)&clientname, (socklen_t* __restrict__)&size))){
 //      printf("New connection request, socket %d will handle it\n", client_sock);
       RequestHandlerArgs *thread_args;
