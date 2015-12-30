@@ -93,21 +93,24 @@ int init_server_container(AppServerContainer** container_ptr){
    return 0;
 }
 
+size_t ignore_response(char* ptr, size_t size, size_t nmemb, void* userdata){
+//   strncat(userdata, ptr, nmemb);
+   return size*nmemb;
+//   return 0;
+}
+
 void perform_dummy_request(char* ipaddr){
    CURL *curl;
    CURLcode res;
 //   int served_by_idx;
-//   char response_str[5000];
+   char response_str[5000];
    curl = curl_easy_init();
 
    printf("Performing dummy request on %s\n", ipaddr);
-
    if (curl) {
       curl_easy_setopt(curl, CURLOPT_URL, ipaddr);
-//      curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, append_headers);
-//      curl_easy_setopt(curl, CURLOPT_HEADERDATA, (void*)response_str);
-//      curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, append_html);
-//      curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void*)response_str);
+      curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, ignore_response);
+      curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void*)response_str);
 //      curl_easy_setopt(curl, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_0 );  //because of a (encoding?) bug in latest version
       res = curl_easy_perform(curl);
       if (res != CURLE_OK) {
@@ -121,6 +124,7 @@ void perform_dummy_request(char* ipaddr){
    }
 
 //   strcpy(response_str, "\0");
+//   printf("Performed dummy request on %s\n", ipaddr);
 //   return served_by_idx;
 
 }
