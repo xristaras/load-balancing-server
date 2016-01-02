@@ -20,7 +20,7 @@
 
 #define PORT          80
 #define MAXMSG        1024
-#define SEC_INTERVAL  2
+#define SEC_INTERVAL  4
 
 #define S2ELAB_IP         "83.212.112.122"
 #define S2ELABSTUDENT_IP  "83.212.85.236"
@@ -56,9 +56,9 @@ typedef struct {
 
 typedef struct {
    AppServer servers[4];
-   int weight[4];
+   int delay[4];
    int now_serving[4];
-   int normalized_weight[4];
+   int normalized_load[4];
 } AppServerContainer;
 #endif
 

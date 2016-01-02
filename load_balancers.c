@@ -57,35 +57,35 @@ int init_server_container(AppServerContainer** container_ptr){
 char* least_latency(int* served_by_idx){
    pthread_mutex_lock(&lb_state_mutex);
    int i, least_loaded_index=0;
-   int least_loaded_value=servers_container->normalized_weight[0];
+   int least_loaded_value=servers_container->normalized_load[0];
    for (i=1; i<=3; i++){
-      if (servers_container->normalized_weight[i] < least_loaded_value){
+      if (servers_container->normalized_load[i] < least_loaded_value){
          least_loaded_index = i;
-         least_loaded_value = servers_container->normalized_weight[i];
+         least_loaded_value = servers_container->normalized_load[i];
       }
    }
 //   printf("NOW SERVING DISTRIBUTION: %d %d %d %d\n", servers_container->now_serving[0], servers_container->now_serving[1], servers_container->now_serving[2], servers_container->now_serving[3]);
    servers_container->now_serving[least_loaded_index]++;
    *served_by_idx=least_loaded_index;
-   servers_container->normalized_weight[least_loaded_index]=(float)(servers_container->weight[least_loaded_index]/servers_container->now_serving[least_loaded_index]);
+   servers_container->normalized_load[least_loaded_index]=(servers_container->delay[least_loaded_index]*servers_container->now_serving[least_loaded_index]);
    pthread_mutex_unlock(&lb_state_mutex);
    return servers_container->servers[least_loaded_index].ipaddress;
 }
 
 int init_server_container(AppServerContainer** container_ptr){
    *container_ptr = (AppServerContainer*)malloc(sizeof(AppServerContainer));
-   (*container_ptr)->weight[0]=0;
-   (*container_ptr)->weight[1]=0;
-   (*container_ptr)->weight[2]=0;
-   (*container_ptr)->weight[3]=0;
+   (*container_ptr)->delay[0]=0;
+   (*container_ptr)->delay[1]=0;
+   (*container_ptr)->delay[2]=0;
+   (*container_ptr)->delay[3]=0;
    (*container_ptr)->now_serving[0]=0;
    (*container_ptr)->now_serving[1]=0;
    (*container_ptr)->now_serving[2]=0;
    (*container_ptr)->now_serving[3]=0;
-   (*container_ptr)->normalized_weight[0]=0;
-   (*container_ptr)->normalized_weight[1]=0;
-   (*container_ptr)->normalized_weight[2]=0;
-   (*container_ptr)->normalized_weight[3]=0;
+   (*container_ptr)->normalized_load[0]=0;
+   (*container_ptr)->normalized_load[1]=0;
+   (*container_ptr)->normalized_load[2]=0;
+   (*container_ptr)->normalized_load[3]=0;
    init_server_struct(&((*container_ptr)->servers[0]), S2ELAB_IP);
    init_server_struct(&((*container_ptr)->servers[1]), S2ELABSTUDENT_IP);
    init_server_struct(&((*container_ptr)->servers[2]), S2ELABTEACHER_IP);
@@ -94,9 +94,8 @@ int init_server_container(AppServerContainer** container_ptr){
 }
 
 size_t ignore_response(char* ptr, size_t size, size_t nmemb, void* userdata){
-//   strncat(userdata, ptr, nmemb);
+   // override default libcurl behavior and do not print output to stdout
    return size*nmemb;
-//   return 0;
 }
 
 void perform_dummy_request(char* ipaddr){
@@ -111,22 +110,12 @@ void perform_dummy_request(char* ipaddr){
       curl_easy_setopt(curl, CURLOPT_URL, ipaddr);
       curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, ignore_response);
       curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void*)response_str);
-//      curl_easy_setopt(curl, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_0 );  //because of a (encoding?) bug in latest version
       res = curl_easy_perform(curl);
       if (res != CURLE_OK) {
          fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
       }
-//      else {
-//         strcat(response_str, "\0");
-//         write(client_socket, response_str, strlen(response_str));
-//      }
       curl_easy_cleanup(curl);
    }
-
-//   strcpy(response_str, "\0");
-//   printf("Performed dummy request on %s\n", ipaddr);
-//   return served_by_idx;
-
 }
 
 void weight_calculator(){
@@ -134,13 +123,17 @@ void weight_calculator(){
    clock_t t;
    while(1){
       sleep(SEC_INTERVAL);
+      pthread_mutex_lock(&lb_state_mutex);
       for(i=0; i<4; i++){
          t = clock();
 	 perform_dummy_request(servers_container->servers[i].ipaddress);
          t = clock() - t;
-         printf("time passed: %d\n", t);
+         printf("time passed: %d\n", (int)t);
+         servers_container->delay[i]=t;
+         servers_container->normalized_load[i]=(servers_container->now_serving[i])*(int)t;
          //update server weight and normalized weight here
       }
+      pthread_mutex_unlock(&lb_state_mutex);
    }
 }
 #endif
