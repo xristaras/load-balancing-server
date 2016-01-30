@@ -55,27 +55,19 @@ int init_server_container(AppServerContainer** container_ptr){
 
 #ifdef LEAST_LATENCY
 char* least_latency(int* served_by_idx){
-   printf("Servers weights: %d %d %d %d\n", servers_container->weight[0], servers_container->weight[1], servers_container->weight[2], servers_container->weight[3]);
-//   pthread_mutex_lock(&lb_state_mutex);
-/*   int i, least_loaded_index=0;
-   int least_loaded_value=servers_container->normalized_load[0];
-   for (i=1; i<=3; i++){
-      if (servers_container->normalized_load[i] < least_loaded_value){
-         least_loaded_index = i;
-         least_loaded_value = servers_container->normalized_load[i];
-      }
+   int r = rand() % servers_container->weight[3];
+   if (r < servers_container->weight[0]){
+      return servers_container->servers[0].ipaddress;
    }
-//   printf("least loaded normalized is index %d with value %d\n", least_loaded_index, least_loaded_value);
-//   printf("Servers mormalized loads: %8d %8d %8d %8d\n", servers_container->normalized_load[0], servers_container->normalized_load[1], servers_container->normalized_load[2], servers_container->normalized_load[3]);
-   servers_container->now_serving[least_loaded_index]++;
-   *served_by_idx=least_loaded_index;
-   servers_container->normalized_load[least_loaded_index]=(servers_container->delay[least_loaded_index]*servers_container->now_serving[least_loaded_index]);
-//   printf("NOW SERVING DISTRIBUTION: %d %d %d %d\n", servers_container->now_serving[0], servers_container->now_serving[1], servers_container->now_serving[2], servers_container->now_serving[3]);
-//   printf("Servers mormalized loads: %8d %8d %8d %8d\n", servers_container->normalized_load[0], servers_container->normalized_load[1], servers_container->normalized_load[2], servers_container->normalized_load[3]);
-   pthread_mutex_unlock(&lb_state_mutex);
-   return servers_container->servers[least_loaded_index].ipaddress;
-*/
-   return "127.0.0.10";
+   else if (r < servers_container->weight[1]){
+      return servers_container->servers[1].ipaddress;
+   }
+   else if (r < servers_container->weight[2]){
+      return servers_container->servers[2].ipaddress;
+   }
+   if (r < servers_container->weight[3]){
+      return servers_container->servers[3].ipaddress;
+   }
 }
 
 int init_server_container(AppServerContainer** container_ptr){
@@ -131,17 +123,18 @@ void weight_calculator(){
          printf("time passed: %d\n", (int)t[i]);
          total_t += t[i];
       }
-      printf("total time: %d\n", (int)total_t);
-      for(i=0; i<4; i++){
-         temp_weights[i] = (float)((float)total_t/(float)t[i]);
-         total_weight += temp_weights[i];
-      }
-      printf("Servers tmp_weights: %f %f %f %f, total weight is %f\n", temp_weights[0], temp_weights[1], temp_weights[2], temp_weights[3], total_weight);
-//      pthread_mutex_lock(&lb_state_mutex);
-      servers_container->weight[0] = round(((float)temp_weights[0]/(float)total_weight*100));
+//      printf("total time: %d\n", (int)total_t);
+      servers_container->weight[0] = round(100*((float)((float)total_t/(float)t[0])));
       for(i=1; i<4; i++){
-         servers_container->weight[i] = round(((float)temp_weights[i]/(float)total_weight*100)) + servers_container->weight[i-1];
+         servers_container->weight[i] = round(100*((float)((float)total_t/(float)t[i]))) + servers_container->weight[i-1];
+//         total_weight += temp_weights[i];
       }
+//      printf("Servers tmp_weights: %f %f %f %f, total weight is %f\n", temp_weights[0], temp_weights[1], temp_weights[2], temp_weights[3], total_weight);
+//      pthread_mutex_lock(&lb_state_mutex);
+//      servers_container->weight[0] = round(((float)temp_weights[0]/(float)total_weight*100));
+//      for(i=1; i<4; i++){
+//         servers_container->weight[i] = round(((float)temp_weights[i]/(float)total_weight*100)) + servers_container->weight[i-1];
+//      }
       printf("Servers weights: %d %d %d %d\n", servers_container->weight[0], servers_container->weight[1], servers_container->weight[2], servers_container->weight[3]);
 //      pthread_mutex_unlock(&lb_state_mutex);
       sleep(SEC_INTERVAL);

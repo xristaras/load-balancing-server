@@ -11,9 +11,9 @@
 #include <pthread.h>
 #include <math.h>
 
-//#define ROUND_ROBIN
+#define ROUND_ROBIN
 //#define LEAST_CONN
-#define LEAST_LATENCY
+//#define LEAST_LATENCY
 
 #define ROUND_ROBIN_ID    "rr"
 #define LEAST_CONN_ID     "lc"
@@ -21,7 +21,7 @@
 
 #define PORT          80
 #define MAXMSG        1024
-#define SEC_INTERVAL  5
+#define SEC_INTERVAL  45
 
 #define S2ELAB_IP         "83.212.112.122"
 #define S2ELABSTUDENT_IP  "83.212.85.236"

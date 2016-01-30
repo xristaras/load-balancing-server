@@ -107,7 +107,7 @@ void operate_server(char* lb_method){
    size_t size;
 
    printf("Server operation initiated, using %s algorithm\n", pretty_print_method(lb_method));
-
+   srand(time(NULL));
    /* Create the socket and set it up to accept connections. */
    sock = initialize_socket(PORT);
    if (listen(sock, 1) < 0) {
