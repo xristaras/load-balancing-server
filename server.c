@@ -91,8 +91,8 @@ int handle_request(RequestHandlerArgs *args){
       close(args->filedes);
       free(args);
       decrement_clients_counter();
-      #if defined(LEAST_CONN) || defined(LEAST_LATENCY)
-      pthread_mutex_unlock(&lb_state_mutex);
+      #ifdef LEAST_CONN
+      pthread_mutex_lock(&lb_state_mutex);
       servers_container->now_serving[served_by_idx]--;
       pthread_mutex_unlock(&lb_state_mutex);
       #endif
