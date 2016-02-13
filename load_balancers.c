@@ -115,20 +115,30 @@ void weight_calculator(){
    int i;
    float temp_weights[4], total_weight;
    clock_t tmp_t, t[4], total_t;
-   CURL *curl;
-   CURLcode res;
-   char response_str[5000];
-   curl = curl_easy_init();
-   curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, ignore_response);
-   curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void*)response_str);
+//   CURL *curl;
+//   CURLcode res;
+//   char response_str[5000];
+//   curl = curl_easy_init();
+//   curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, ignore_response);
+//   curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void*)response_str);
    while(1){
       total_t = 0;
       total_weight = 0.0;
       for(i=0; i<4; i++){
-         curl_easy_setopt(curl, CURLOPT_URL, servers_container->servers[i].ipaddress);
-         t[i] = clock();
-         res = curl_easy_perform(curl);
-         t[i] = clock() - t[i];
+         char ping_cmd[64];
+//         sprintf(ping_cmd, "ping -c 1 %s | tail -1 | awk -F '/' '{print $5}'", servers_container->servers[i].ipaddress);
+         sprintf(ping_cmd, "curl --silent -o /dev/null %s -w %%{time_total}\\n", servers_container->servers[i].ipaddress);      
+         FILE *ping = popen(ping_cmd, "r");
+         char res[8];
+         fgets(res, sizeof(res), ping);
+         t[i] = 1000 * atof(res);
+
+//         }
+         pclose(ping);
+//         curl_easy_setopt(curl, CURLOPT_URL, servers_container->servers[i].ipaddress);
+//         t[i] = clock();
+//         res = curl_easy_perform(curl);
+//         t[i] = clock() - t[i];
 //	 t[i] = perform_dummy_request(servers_container->servers[i].ipaddress);
          printf("time passed: %d\n", (int)t[i]);
          total_t += t[i];

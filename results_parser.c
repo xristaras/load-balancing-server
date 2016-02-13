@@ -17,16 +17,26 @@ const char* getfield(char* line, int num)
 
 int main(int argc, char* argv[])
 {
-    FILE* stream = fopen(argv[1], "r");
+    FILE* ifstream = fopen(argv[1], "r");
+    FILE* ofstream = fopen(argv[2], "w");
 
     char line[1024];
-    while (fgets(line, 1024, stream))
+    while (fgets(line, 1024, ifstream))
     {
         char* tmp = strdup(line);
-        printf("Time in miliseconds is %s\n", getfield(tmp, 2));
+        char* tmp2 = strdup(line);
+        char* time = strcat(getfield(tmp, 2), "\n");
+        char* status = getfield(tmp2, 4);
         // NOTE strtok clobbers tmp
+        if(strcmp(status, "200")==0){
+            printf("Time in miliseconds is %s and status is %s\n", time, status);
+            fputs(time, ofstream);
+        }
         free(tmp);
+        free(tmp2);
     }
+    fclose(ifstream);
+    fclose(ofstream);
 }
 
 ///mongodb examples

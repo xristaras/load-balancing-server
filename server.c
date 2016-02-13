@@ -2,7 +2,7 @@
 
 size_t append_headers(char* ptr, size_t size, size_t nitems, void* userdata){
    if (strstr(ptr, "503") != NULL){
-      printf("503 found!\n");
+//      printf("503 found!\n");
    }
    strncat(userdata, ptr, size*nitems);
    return size*nitems;
@@ -22,7 +22,7 @@ int serve_request(int client_socket, char* lb_method){
 
    char selected_ip[16];
    strcpy(selected_ip, choose_and_fetch_ip(&served_by_idx));
-   printf("Request being served by %s, currently serving %d clients\n", selected_ip, num_clients_connected);
+//   printf("Request being served by %s, currently serving %d clients\n", selected_ip, num_clients_connected);
 
    if (curl) {
       curl_easy_setopt(curl, CURLOPT_URL, selected_ip);
