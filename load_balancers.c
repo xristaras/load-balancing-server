@@ -76,6 +76,10 @@ int init_server_container(AppServerContainer** container_ptr){
    (*container_ptr)->weight[1]=0;
    (*container_ptr)->weight[2]=0;
    (*container_ptr)->weight[3]=0;
+   (*container_ptr)->time[0]=100;
+   (*container_ptr)->time[1]=100;
+   (*container_ptr)->time[2]=100;
+   (*container_ptr)->time[3]=100;
    init_server_struct(&((*container_ptr)->servers[0]), S2ELAB_IP);
    init_server_struct(&((*container_ptr)->servers[1]), S2ELABSTUDENT_IP);
    init_server_struct(&((*container_ptr)->servers[2]), S2ELABTEACHER_IP);
@@ -115,12 +119,6 @@ void weight_calculator(){
    int i;
    float temp_weights[4], total_weight;
    clock_t tmp_t, t[4], total_t;
-//   CURL *curl;
-//   CURLcode res;
-//   char response_str[5000];
-//   curl = curl_easy_init();
-//   curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, ignore_response);
-//   curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void*)response_str);
    while(1){
       total_t = 0;
       total_weight = 0.0;
@@ -131,15 +129,15 @@ void weight_calculator(){
          FILE *ping = popen(ping_cmd, "r");
          char res[8];
          fgets(res, sizeof(res), ping);
-         t[i] = 1000 * atof(res);
-
-//         }
+         t[i] = (1000 * atof(res) + servers_container->time[i]) / 2;
+         if (t[i]<100){
+            t[i] = 100;
+         }
+         else if (t[i]>10000){
+            t[i] = 10000;
+         }
+         servers_container->time[i] = t[i];
          pclose(ping);
-//         curl_easy_setopt(curl, CURLOPT_URL, servers_container->servers[i].ipaddress);
-//         t[i] = clock();
-//         res = curl_easy_perform(curl);
-//         t[i] = clock() - t[i];
-//	 t[i] = perform_dummy_request(servers_container->servers[i].ipaddress);
          printf("time passed: %d\n", (int)t[i]);
          total_t += t[i];
       }
@@ -150,11 +148,6 @@ void weight_calculator(){
 //         total_weight += temp_weights[i];
       }
 //      printf("Servers tmp_weights: %f %f %f %f, total weight is %f\n", temp_weights[0], temp_weights[1], temp_weights[2], temp_weights[3], total_weight);
-//      pthread_mutex_lock(&lb_state_mutex);
-//      servers_container->weight[0] = round(((float)temp_weights[0]/(float)total_weight*100));
-//      for(i=1; i<4; i++){
-//         servers_container->weight[i] = round(((float)temp_weights[i]/(float)total_weight*100)) + servers_container->weight[i-1];
-//      }
       printf("Servers weights: %d %d %d %d\n", servers_container->weight[0], servers_container->weight[1], servers_container->weight[2], servers_container->weight[3]);
 //      pthread_mutex_unlock(&lb_state_mutex);
       sleep(SEC_INTERVAL);

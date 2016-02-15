@@ -21,7 +21,7 @@
 
 #define PORT          80
 #define MAXMSG        1024
-#define SEC_INTERVAL  45
+#define SEC_INTERVAL  10
 
 #define S2ELAB_IP         "83.212.112.122"
 #define S2ELABSTUDENT_IP  "83.212.85.236"
