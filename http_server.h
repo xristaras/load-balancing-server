@@ -13,11 +13,13 @@
 
 //#define ROUND_ROBIN
 //#define LEAST_CONN
-#define LEAST_LATENCY
+//#define LEAST_LATENCY
+#define LEAST_LATENCY_ALT
 
-#define ROUND_ROBIN_ID    "rr"
-#define LEAST_CONN_ID     "lc"
-#define LEAST_LATENCY_ID  "ll"
+#define ROUND_ROBIN_ID        "rr"
+#define LEAST_CONN_ID         "lc"
+#define LEAST_LATENCY_ID      "ll"
+#define LEAST_LATENCY_ALT_ID  "ll"
 
 #define PORT          80
 #define MAXMSG        1024
@@ -58,6 +60,19 @@ typedef struct {
 typedef struct {
    AppServer servers[4];
    int weight[4];
+   int time[4];
+} AppServerContainer;
+#endif
+
+#ifdef LEAST_LATENCY_ALT
+typedef struct {
+   char ipaddress[16];
+} AppServer;
+
+typedef struct {
+   AppServer servers[4];
+   int weight[4];
+   int time[4];
 } AppServerContainer;
 #endif
 

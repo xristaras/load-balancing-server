@@ -14,6 +14,9 @@ int main(int argc, char* argv[]){
    #ifdef LEAST_LATENCY
    strcpy(lb_method, LEAST_LATENCY_ID);
    #endif
+   #ifdef LEAST_LATENCY_ALT
+   strcpy(lb_method, LEAST_LATENCY_ALT_ID);
+   #endif
 
    pthread_mutex_init(&lb_state_mutex, NULL);
    pthread_mutex_init(&clients_counter_mutex, NULL);
