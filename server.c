@@ -31,14 +31,38 @@ int serve_request(int client_socket, char* lb_method){
       curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, append_html);
       curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void*)response_str);
       curl_easy_setopt(curl, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_0 );  //because of a (encoding?) bug in latest version
-      res = curl_easy_perform(curl);
-      if (res != CURLE_OK) {
-         fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
+#ifdef LEAST_LATENCY_ALT
+      if(rand()%250==0){
+         clock_t before, after, t;
+	 time(&before);
+         res = curl_easy_perform(curl);
+	 time(&after);
+         if (res != CURLE_OK) {
+            fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
+         }
+         else {
+            pthread_mutex_lock(&lb_state_mutex);
+	    printf("difftime result: %2.3f\n", difftime(after, before));
+   	    weight_calculator(served_by_idx, 100*difftime(after, before));
+            pthread_mutex_unlock(&lb_state_mutex);
+
+            strcat(response_str, "\0");
+            write(client_socket, response_str, strlen(response_str));
+         }
       }
-      else {
-         strcat(response_str, "\0");
-         write(client_socket, response_str, strlen(response_str));
+      else{
+#endif
+         res = curl_easy_perform(curl);
+	 if (res != CURLE_OK) {
+	    fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
+	 }
+         else{
+            strcat(response_str, "\0");
+            write(client_socket, response_str, strlen(response_str));
+         }
+#ifdef LEAST_LATENCY_ALT
       }
+#endif
       curl_easy_cleanup(curl);
    }
 

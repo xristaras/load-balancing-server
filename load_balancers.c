@@ -159,25 +159,29 @@ void weight_calculator(){
 char* least_latency_alt(int* served_by_idx){
    int r = rand() % servers_container->weight[3];
    if (r < servers_container->weight[0]){
+      *served_by_idx = 0;
       return servers_container->servers[0].ipaddress;
    }
    else if (r < servers_container->weight[1]){
+      *served_by_idx = 1;
       return servers_container->servers[1].ipaddress;
    }
    else if (r < servers_container->weight[2]){
+      *served_by_idx = 2;
       return servers_container->servers[2].ipaddress;
    }
    if (r < servers_container->weight[3]){
+      *served_by_idx = 3;
       return servers_container->servers[3].ipaddress;
    }
 }
 
 int init_server_container(AppServerContainer** container_ptr){
    *container_ptr = (AppServerContainer*)malloc(sizeof(AppServerContainer));
-   (*container_ptr)->weight[0]=0;
-   (*container_ptr)->weight[1]=0;
-   (*container_ptr)->weight[2]=0;
-   (*container_ptr)->weight[3]=0;
+   (*container_ptr)->weight[0]=100;
+   (*container_ptr)->weight[1]=200;
+   (*container_ptr)->weight[2]=300;
+   (*container_ptr)->weight[3]=400;
    (*container_ptr)->time[0]=100;
    (*container_ptr)->time[1]=100;
    (*container_ptr)->time[2]=100;
@@ -219,43 +223,46 @@ int perform_dummy_request(char* ipaddr){
 }
 */
 
-void weight_calculator(){
+void weight_calculator(int idx, clock_t time){
    int i;
    float temp_weights[4], total_weight;
    clock_t tmp_t, t[4], total_t;
-   while(1){
+   printf("will update index %d with time %d\n", idx, (int)time);
+//   while(1){
       total_t = 0;
       total_weight = 0.0;
-      for(i=0; i<4; i++){
-         char ping_cmd[64];
+//      for(i=0; i<4; i++){
+//         char ping_cmd[64];
 //         sprintf(ping_cmd, "ping -c 1 %s | tail -1 | awk -F '/' '{print $5}'", servers_container->servers[i].ipaddress);
-         sprintf(ping_cmd, "curl --silent -o /dev/null %s -w %%{time_total}\\n", servers_container->servers[i].ipaddress);
-         FILE *ping = popen(ping_cmd, "r");
-         char res[8];
-         fgets(res, sizeof(res), ping);
-         t[i] = (1000 * atof(res) + servers_container->time[i]) / 2;
-         if (t[i]<100){
-            t[i] = 100;
+//         sprintf(ping_cmd, "curl --silent -o /dev/null %s -w %%{time_total}\\n", servers_container->servers[i].ipaddress);
+//         FILE *ping = popen(ping_cmd, "r");
+//         char res[8];
+//         fgets(res, sizeof(res), ping);
+         time = ((int)time + servers_container->time[idx]) / 2;
+         if (time<100){
+            time = 100;
          }
-         else if (t[i]>10000){
-            t[i] = 10000;
+         else if (time>10000){
+            time = 10000;
          }
-         servers_container->time[i] = t[i];
-         pclose(ping);
-         printf("time passed: %d\n", (int)t[i]);
-         total_t += t[i];
-      }
+         servers_container->time[idx] = time;
+	 printf("finally will update index %d with time %d\n", idx, (int)(servers_container->time[idx]));
+//         pclose(ping);
+//         printf("time passed: %d\n", (int)t[i]);
+//         total_t += t[i];
+       total_t = servers_container->time[0] + servers_container->time[1] + servers_container->time[2] + servers_container->time[3];
+//      }
 //      printf("total time: %d\n", (int)total_t);
-      servers_container->weight[0] = round(100*((float)((float)total_t/(float)t[0])));
+      servers_container->weight[0] = round(100*((float)((float)total_t/(float)servers_container->time[0])));
       for(i=1; i<4; i++){
-         servers_container->weight[i] = round(100*((float)((float)total_t/(float)t[i]))) + servers_container->weight[i-1];
+         servers_container->weight[i] = round(100*((float)((float)total_t/(float)servers_container->time[i]))) + servers_container->weight[i-1];
 //         total_weight += temp_weights[i];
       }
 //      printf("Servers tmp_weights: %f %f %f %f, total weight is %f\n", temp_weights[0], temp_weights[1], temp_weights[2], temp_weights[3], total_weight);
       printf("Servers weights: %d %d %d %d\n", servers_container->weight[0], servers_container->weight[1], servers_container->weight[2], servers_container->weight[3]);
 //      pthread_mutex_unlock(&lb_state_mutex);
-      sleep(SEC_INTERVAL);
-   }
+//      sleep(SEC_INTERVAL);
+//   }
 }
 #endif
 

@@ -19,7 +19,7 @@
 #define ROUND_ROBIN_ID        "rr"
 #define LEAST_CONN_ID         "lc"
 #define LEAST_LATENCY_ID      "ll"
-#define LEAST_LATENCY_ALT_ID  "ll"
+#define LEAST_LATENCY_ALT_ID  "lla"
 
 #define PORT          80
 #define MAXMSG        1024
