@@ -124,12 +124,13 @@ void weight_calculator(){
       total_weight = 0.0;
       for(i=0; i<4; i++){
          char ping_cmd[64];
-//         sprintf(ping_cmd, "ping -c 1 %s | tail -1 | awk -F '/' '{print $5}'", servers_container->servers[i].ipaddress);
-         sprintf(ping_cmd, "curl --silent -o /dev/null %s -w %%{time_total}\\n", servers_container->servers[i].ipaddress);      
+         sprintf(ping_cmd, "ping -c 3 %s | tail -1 | awk -F '/' '{print $5}'", servers_container->servers[i].ipaddress);
+//         sprintf(ping_cmd, "curl --silent -o /dev/null %s -w %%{time_total}\\n", servers_container->servers[i].ipaddress);      
          FILE *ping = popen(ping_cmd, "r");
          char res[8];
          fgets(res, sizeof(res), ping);
-         t[i] = (1000 * atof(res) + servers_container->time[i]) / 2;
+//         t[i] = (1000 * atof(res) + servers_container->time[i]) / 2;
+         t[i] = 1000 * atof(res);
          if (t[i]<100){
             t[i] = 100;
          }
