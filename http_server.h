@@ -20,6 +20,7 @@
 #define LEAST_LATENCY_ID  "ll"
 
 #define PORT          80
+#define PORT_NUM      5000   //for other servers ports
 #define MAXMSG        1024
 #define SEC_INTERVAL  10
 

@@ -156,6 +156,77 @@ void weight_calculator(){
 }
 #endif
 
+#ifdef LEAST_LATENCY_ALT
+void weight_calculator(){
+   int i;
+   float temp_weights[4], total_weight;
+   clock_t tmp_t, t[4], total_t;
+
+int listenfd = 0, connfd = 0;
+struct sockaddr_in serv_addr;
+
+char sendBuff[1025];
+char recvBuff[8];
+
+int i = 0;
+
+listenfd = socket(AF_INET, SOCK_STREAM, 0);
+memset(&serv_addr, '0', sizeof(serv_addr));
+memset(sendBuff, '0', sizeof(sendBuff));
+
+serv_addr.sin_family = AF_INET;
+serv_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+serv_addr.sin_port = htons(PORT_NUM);
+
+bind(listenfd, (struct sockaddr*)&serv_addr, sizeof(serv_addr));
+
+listen(listenfd, 10);
+
+connfd = accept(listenfd, (struct sockaddr*)NULL, NULL);
+
+   while(1){
+      total_t = 0;
+      total_weight = 0.0;
+      for(i=0; i<4; i++){
+         char ping_cmd[64];
+         sprintf(ping_cmd, "ping -c 3 %s | tail -1 | awk -F '/' '{print $5}'", servers_container->servers[i].ipaddress);
+//         sprintf(ping_cmd, "curl --silent -o /dev/null %s -w %%{time_total}\\n", servers_container->servers[i].ipaddress);
+         FILE *ping = popen(ping_cmd, "r");
+         char res[8];
+         fgets(res, sizeof(res), ping);
+//         t[i] = (1000 * atof(res) + servers_container->time[i]) / 2;
+         t[i] = 1000 * atof(res);
+         if (t[i]<100){
+            t[i] = 100;
+         }
+         else if (t[i]>10000){
+            t[i] = 10000;
+         }
+         servers_container->time[i] = t[i];
+         pclose(ping);
+         printf("time passed: %d\n", (int)t[i]);
+         total_t += t[i];
+
+	 memset(recvBuff, '\0', sizeof(recvBuff));
+	 recv(connfd, recvBuff, sizeof(recvBuff),0);
+	 printf( "%s\n", recvBuff);
+
+      }
+//      printf("total time: %d\n", (int)total_t);
+      servers_container->weight[0] = round(100*((float)((float)total_t/(float)t[0])));
+      for(i=1; i<4; i++){
+         servers_container->weight[i] = round(100*((float)((float)total_t/(float)t[i]))) + servers_container->weight[i-1];
+//         total_weight += temp_weights[i];
+      }
+//      printf("Servers tmp_weights: %f %f %f %f, total weight is %f\n", temp_weights[0], temp_weights[1], temp_weights[2], temp_weights[3], total_weight);
+      printf("Servers weights: %d %d %d %d\n", servers_container->weight[0], servers_container->weight[1], servers_container->weight[2], servers_container->weight[3]);
+//      pthread_mutex_unlock(&lb_state_mutex);
+      sleep(SEC_INTERVAL);
+   }
+}
+#endif
+
+
 int destroy_server_container(AppServerContainer** servers_ptr){
    free(*servers_ptr);
    return 0;
