@@ -118,19 +118,30 @@ int perform_dummy_request(char* ipaddr){
 void weight_calculator(){
    int i;
    float temp_weights[4], total_weight;
-   clock_t tmp_t, t[4], total_t;
+   clock_t tmp_t, t[4], ping_res[4], curl_res[4], total_t;
    while(1){
       total_t = 0;
       total_weight = 0.0;
       for(i=0; i<4; i++){
-         char ping_cmd[64];
+         char ping_cmd[64], curl_cmd[64];
          sprintf(ping_cmd, "ping -c 3 %s | tail -1 | awk -F '/' '{print $5}'", servers_container->servers[i].ipaddress);
 //         sprintf(ping_cmd, "curl --silent -o /dev/null %s -w %%{time_total}\\n", servers_container->servers[i].ipaddress);      
          FILE *ping = popen(ping_cmd, "r");
-         char res[8];
-         fgets(res, sizeof(res), ping);
+         char p_res[8];
+         fgets(p_res, sizeof(p_res), ping);
 //         t[i] = (1000 * atof(res) + servers_container->time[i]) / 2;
-         t[i] = 1000 * atof(res);
+         ping_res[i] = 1000 * atof(p_res);
+         pclose(ping);
+
+         sprintf(curl_cmd, "ssh curl --silent -o /dev/null %s -w %%{time_total}\\n", servers_container->servers[i].ipaddress);
+         FILE *curl = popen(curl_cmd, "r");
+         char c_res[8];
+         fgets(c_res, sizeof(c_res), curl);
+//         t[i] = (1000 * atof(res) + servers_container->time[i]) / 2;
+         curl_res[i] = atof(c_res);
+         pclose(curl);
+
+         t[i] = atoi(ping_res) * atoi(curl_res);
          if (t[i]<100){
             t[i] = 100;
          }
@@ -138,7 +149,6 @@ void weight_calculator(){
             t[i] = 10000;
          }
          servers_container->time[i] = t[i];
-         pclose(ping);
          printf("time passed: %d\n", (int)t[i]);
          total_t += t[i];
       }
