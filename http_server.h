@@ -29,6 +29,12 @@
 #define S2ELABTEACHER_IP  "83.212.87.48"
 #define S2ELABTUTOR_IP    "83.212.112.124"
 
+#define S2ELAB_IDRSA         "/root/.ssh/s2elab_id_rsa"
+#define S2ELABSTUDENT_IDRSA  "/root/.ssh/s2elabstudent_id_rsa"
+#define S2ELABTEACHER_IDRSA  "/root/.ssh/s2elabteacher_id_rsa"
+#define S2ELABTUTOR_IDRSA    "/root/.ssh/s2elabtutor_id_rsa"
+
+
 #ifdef ROUND_ROBIN
 typedef struct {
    char ipaddress[16];
@@ -54,11 +60,13 @@ typedef struct {
 #ifdef LEAST_LATENCY
 typedef struct {
    char ipaddress[16];
+   char path_to_idrsa[128];
 } AppServer;
 
 typedef struct {
    AppServer servers[4];
    int weight[4];
+   int time[4];
 } AppServerContainer;
 #endif
 
