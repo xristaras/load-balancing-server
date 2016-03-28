@@ -11,6 +11,9 @@ int main(int argc, char* argv[]){
    #ifdef LEAST_CONN
    strcpy(lb_method, LEAST_CONN_ID);
    #endif
+   #ifdef LEAST_TOTAL_TIME
+   strcpy(lb_method, LEAST_TOTAL_TIME_ID);
+   #endif
    #ifdef LEAST_LATENCY
    strcpy(lb_method, LEAST_LATENCY_ID);
    #endif

@@ -13,13 +13,15 @@
 
 //#define ROUND_ROBIN
 //#define LEAST_CONN
-#define LEAST_LATENCY
+#define LEAST_TOTAL_TIME
+//#define LEAST_LATENCY
 
-#define ROUND_ROBIN_ID    "rr"
-#define LEAST_CONN_ID     "lc"
-#define LEAST_LATENCY_ID  "ll"
+#define ROUND_ROBIN_ID       "rr"
+#define LEAST_CONN_ID        "lc"
+#define LEAST_TOTAL_TIME_ID  "lt"
+#define LEAST_LATENCY_ID     "ll"
 
-#define PORT          80
+#define PORT          5555
 #define PORT_NUM      5000   //for other servers ports
 #define MAXMSG        1024
 #define SEC_INTERVAL  10
@@ -51,6 +53,18 @@ typedef struct {
 } AppServerContainer;
 #endif
 
+#ifdef LEAST_TOTAL_TIME
+typedef struct {
+   char ipaddress[16];
+} AppServer;
+
+typedef struct {
+   AppServer servers[4];
+   int ms_served[4];  //total num of milliseconds served
+} AppServerContainer;
+#endif
+
+
 #ifdef LEAST_LATENCY
 typedef struct {
    char ipaddress[16];
@@ -75,7 +89,11 @@ pthread_mutex_t lb_state_mutex, clients_counter_mutex;
 void operate_server(char* lb_method);
 size_t append_headers(char* ptr, size_t size, size_t nitems, void* userdata);
 size_t append_html(char* ptr, size_t size, size_t nmemb, void* userdata);
+#ifdef LEAST_TOTAL_TIME
+int serve_request(int client_socket, char* lb_method, int *ms_passed);
+#else
 int serve_request(int client_socket, char* lb_method);
+#endif
 int initialize_socket(uint16_t port);
 int handle_request(RequestHandlerArgs* args);
 void increment_clients_counter();

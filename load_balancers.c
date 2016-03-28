@@ -53,6 +53,40 @@ int init_server_container(AppServerContainer** container_ptr){
 }
 #endif
 
+#ifdef LEAST_TOTAL_TIME
+char* least_total_time(int* served_by_idx){
+   pthread_mutex_lock(&lb_state_mutex);
+   int i, least_time_index=0;
+   int least_time_value=servers_container->ms_served[0];
+   for (i=1; i<=3; i++){
+      if (servers_container->ms_served[i] < least_time_value){
+         least_time_index = i;
+         least_time_value = servers_container->ms_served[i];
+      }
+   }
+   printf("TOTAL TIMES DISTRIBUTION: %d %d %d %d\n", servers_container->ms_served[0], servers_container->ms_served[1], servers_container->ms_served[2], servers_container->ms_served[3]);
+//   servers_container->now_serving[least_time_index]++;
+  pthread_mutex_unlock(&lb_state_mutex);
+   *served_by_idx=least_time_index;
+   return servers_container->servers[least_time_index].ipaddress;
+}
+
+int init_server_container(AppServerContainer** container_ptr){
+   *container_ptr = (AppServerContainer*)malloc(sizeof(AppServerContainer));
+   (*container_ptr)->ms_served[0]=0;
+   (*container_ptr)->ms_served[1]=0;
+   (*container_ptr)->ms_served[2]=0;
+   (*container_ptr)->ms_served[3]=0;
+   init_server_struct(&((*container_ptr)->servers[0]), S2ELAB_IP);
+   init_server_struct(&((*container_ptr)->servers[1]), S2ELABSTUDENT_IP);
+   init_server_struct(&((*container_ptr)->servers[2]), S2ELABTEACHER_IP);
+   init_server_struct(&((*container_ptr)->servers[3]), S2ELABTUTOR_IP);
+   return 0;
+}
+#endif
+
+
+
 #ifdef LEAST_LATENCY
 char* least_latency(int* served_by_idx){
    int r = rand() % servers_container->weight[3];
@@ -254,6 +288,9 @@ char* choose_and_fetch_ip(int* served_by_idx){
    #ifdef LEAST_CONN
    return least_conn(served_by_idx);
    #endif
+   #ifdef LEAST_TOTAL_TIME
+   return least_total_time(served_by_idx);
+   #endif
    #ifdef LEAST_LATENCY
    return least_latency(served_by_idx);
    #endif
@@ -269,5 +306,7 @@ char* pretty_print_method(char* lb_method_identifier){
    else if (strcmp(lb_method_identifier, LEAST_LATENCY_ID)==0){
       return "least latency";
    }
-
+   else if (strcmp(lb_method_identifier, LEAST_TOTAL_TIME_ID)==0){
+      return "least total time";
+   }
 }

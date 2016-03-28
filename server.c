@@ -13,13 +13,17 @@ size_t append_html(char* ptr, size_t size, size_t nmemb, void* userdata){
    return size*nmemb;
 }
 
+#ifdef LEAST_TOTAL_TIME
+int serve_request(int client_socket, char* lb_method, int *ms_passed){
+#else
 int serve_request(int client_socket, char* lb_method){
+#endif
    CURL *curl;
    CURLcode res;
    int served_by_idx;
    char response_str[5000];
    curl = curl_easy_init();
-
+   clock_t t;
    char selected_ip[16];
    strcpy(selected_ip, choose_and_fetch_ip(&served_by_idx));
 //   printf("Request being served by %s, currently serving %d clients\n", selected_ip, num_clients_connected);
@@ -31,13 +35,33 @@ int serve_request(int client_socket, char* lb_method){
       curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, append_html);
       curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void*)response_str);
       curl_easy_setopt(curl, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_0 );  //because of a (encoding?) bug in latest version
+      #ifdef LEAST_TOTAL_TIME
+      t = clock();
       res = curl_easy_perform(curl);
+      t = clock() - t;
+      #else
+      res = curl_easy_perform(curl);
+      #endif
       if (res != CURLE_OK) {
          fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
+         #ifdef LEAST_TOTAL_TIME
+	 if (t < 10000){
+	    *ms_passed = 10000;
+	 }
+         #endif
+
       }
       else {
          strcat(response_str, "\0");
          write(client_socket, response_str, strlen(response_str));
+         #ifdef LEAST_TOTAL_TIME
+	 if (t <= 10000){
+             *ms_passed = t;
+	 }
+	 else {
+             *ms_passed = 10000;
+	 }
+         #endif
       }
       curl_easy_cleanup(curl);
    }
@@ -87,13 +111,29 @@ int handle_request(RequestHandlerArgs *args){
       /* Data read. */
       int len = strlen(buffer);
       buffer[len-1] = 0;
+      #ifdef LEAST_TOTAL_TIME
+      int ms_passed;
+      int served_by_idx=serve_request(args->filedes, args->lb_method, &ms_passed);
+      #else
       int served_by_idx=serve_request(args->filedes, args->lb_method);
+      #endif
       close(args->filedes);
       free(args);
       decrement_clients_counter();
       #ifdef LEAST_CONN
       pthread_mutex_lock(&lb_state_mutex);
       servers_container->now_serving[served_by_idx]--;
+      pthread_mutex_unlock(&lb_state_mutex);
+      #endif
+      #ifdef LEAST_TOTAL_TIME
+      pthread_mutex_lock(&lb_state_mutex);
+      servers_container->ms_served[served_by_idx] += ms_passed;
+      if (servers_container->ms_served[served_by_idx] > 100000000){
+         int i;
+	 for (i=0; i<4; i++){
+            servers_container->ms_served[i] -= 99000000;
+	 }
+      }
       pthread_mutex_unlock(&lb_state_mutex);
       #endif
       return 0;
