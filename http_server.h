@@ -11,9 +11,9 @@
 #include <pthread.h>
 #include <math.h>
 
-//#define ROUND_ROBIN
+/#define ROUND_ROBIN
 //#define LEAST_CONN
-#define LEAST_TOTAL_TIME
+//#define LEAST_TOTAL_TIME
 //#define LEAST_LATENCY
 
 #define ROUND_ROBIN_ID       "rr"
