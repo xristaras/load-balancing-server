@@ -66,7 +66,8 @@ char* least_total_time(int* served_by_idx){
    }
    printf("TOTAL TIMES DISTRIBUTION: %d %d %d %d\n", servers_container->ms_served[0], servers_container->ms_served[1], servers_container->ms_served[2], servers_container->ms_served[3]);
 //   servers_container->now_serving[least_time_index]++;
-  pthread_mutex_unlock(&lb_state_mutex);
+   servers_container->ms_served[least_time_index]+=1400;
+   pthread_mutex_unlock(&lb_state_mutex);
    *served_by_idx=least_time_index;
    return servers_container->servers[least_time_index].ipaddress;
 }
