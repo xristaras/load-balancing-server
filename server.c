@@ -127,7 +127,7 @@ int handle_request(RequestHandlerArgs *args){
       #endif
       #ifdef LEAST_TOTAL_TIME
       pthread_mutex_lock(&lb_state_mutex);
-      servers_container->ms_served[served_by_idx] += ms_passed;
+      servers_container->ms_served[served_by_idx] += ms_passed-1400;
       if (servers_container->ms_served[served_by_idx] > 100000000){
          int i;
 	 for (i=0; i<4; i++){

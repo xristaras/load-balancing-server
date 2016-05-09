@@ -55,7 +55,7 @@ int init_server_container(AppServerContainer** container_ptr){
 
 #ifdef LEAST_TOTAL_TIME
 char* least_total_time(int* served_by_idx){
-//   pthread_mutex_lock(&lb_state_mutex);
+   pthread_mutex_lock(&lb_state_mutex);
    int i, least_time_index=0;
    int least_time_value=servers_container->ms_served[0];
    for (i=1; i<=3; i++){
@@ -66,7 +66,8 @@ char* least_total_time(int* served_by_idx){
    }
 //   printf("TOTAL TIMES DISTRIBUTION: %d %d %d %d\n", servers_container->ms_served[0], servers_container->ms_served[1], servers_container->ms_served[2], servers_container->ms_served[3]);
 //   servers_container->now_serving[least_time_index]++;
-//  pthread_mutex_unlock(&lb_state_mutex);
+   servers_container->ms_served[least_time_index]+=1400;
+   pthread_mutex_unlock(&lb_state_mutex);
    *served_by_idx=least_time_index;
    return servers_container->servers[least_time_index].ipaddress;
 }
