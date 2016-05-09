@@ -64,7 +64,7 @@ char* least_total_time(int* served_by_idx){
          least_time_value = servers_container->ms_served[i];
       }
    }
-   printf("TOTAL TIMES DISTRIBUTION: %d %d %d %d\n", servers_container->ms_served[0], servers_container->ms_served[1], servers_container->ms_served[2], servers_container->ms_served[3]);
+//   printf("TOTAL TIMES DISTRIBUTION: %d %d %d %d\n", servers_container->ms_served[0], servers_container->ms_served[1], servers_container->ms_served[2], servers_container->ms_served[3]);
 //   servers_container->now_serving[least_time_index]++;
    servers_container->ms_served[least_time_index]+=1400;
    pthread_mutex_unlock(&lb_state_mutex);
