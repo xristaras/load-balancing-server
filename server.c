@@ -45,9 +45,9 @@ int serve_request(int client_socket, char* lb_method){
       if (res != CURLE_OK) {
          fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
          #ifdef LEAST_TOTAL_TIME
-	 if (t < 10000){
-	    *ms_passed = 10000;
-	 }
+//	 if (t < 1000){
+	    *ms_passed = 1500;
+//	 }
          #endif
 
       }
@@ -55,11 +55,14 @@ int serve_request(int client_socket, char* lb_method){
          strcat(response_str, "\0");
          write(client_socket, response_str, strlen(response_str));
          #ifdef LEAST_TOTAL_TIME
-	 if (t <= 10000){
-             *ms_passed = t;
+	 if (t > 12000){
+             *ms_passed = 12000;
+	 }
+	 else if (t < 100){
+             *ms_passed = 100;
 	 }
 	 else {
-             *ms_passed = 10000;
+	     *ms_passed = t;
 	 }
          #endif
       }
